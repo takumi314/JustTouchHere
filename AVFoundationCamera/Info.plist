@@ -28,8 +28,8 @@
 	<string>Main</string>
 	<key>UIRequiredDeviceCapabilities</key>
 	<array>
+		<string>video-camera</string>
 		<string>camera-flash</string>
-		<string>front-facing- camera</string>
 		<string>auto-focus-camera</string>
 		<string>still-camera</string>
 		<string>armv7</string>
