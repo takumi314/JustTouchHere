@@ -12,7 +12,6 @@
 @interface ViewController ()
 @property (nonatomic, strong) AVCaptureStillImageOutput *imageOutput;
 @property (nonatomic, strong) IBOutlet UIView *preView;
-
 @property (nonatomic, strong) AVCaptureSession *session;
 
 @end
