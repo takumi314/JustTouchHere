@@ -19,10 +19,10 @@
 @implementation ViewController {
     AVCaptureDeviceInput *_input;
     AVCaptureStillImageOutput *_output;
-//    AVCaptureSession *self.session;
     AVCaptureDevice *_camera;
 }
 
+#pragma mark - Life cycle
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -44,7 +44,7 @@
     [self setupCamera];
     
     // setup camera
-    [self setupDisplay];
+//    [self setupDisplay];
 }
 
 
@@ -55,7 +55,7 @@
     // スクリーンの高さ
     CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
     //プレビュー用のビューを生成
-    _preView = [[UIView alloc] initWithFrame:CGRectMake(0.0, 0.0, screeWidth, screenHeight)];
+    self.preView = [[UIView alloc] initWithFrame:CGRectMake(0.0, 0.0, screeWidth, screenHeight)];
 }
 
 
@@ -127,17 +127,16 @@
     // キャプチャーセッションから入力のプレビュー表示を作成
     AVCaptureVideoPreviewLayer *previewLayer = [[AVCaptureVideoPreviewLayer alloc] initWithSession:self.session];
    
-    previewLayer.frame = _preView.bounds;
+    previewLayer.frame = self.preView.bounds;
     
-//        previewLayer.videoGravity = AVLayerVideoGravityResize
-//        previewLayer.videoGravity = AVLayerVideoGravityResizeAspect
+//        previewLayer.videoGravity = AVLayerVideoGravityResize;
+//    previewLayer.videoGravity = AVLayerVideoGravityResizeAspect;
     previewLayer.videoGravity = AVLayerVideoGravityResizeAspectFill;
     
     // レイヤーをViewに設定
-    // これを外すとプレビューが無くなる、けれど撮影はできる
-    CALayer *layer = self.view.layer;
-    layer.masksToBounds = YES;
-    [self.view.layer addSublayer:previewLayer];
+    // これを外すとプレビューが無くなるが撮影はできる
+    self.preView.layer.masksToBounds = YES;
+    [self.preView.layer addSublayer:previewLayer];
     
     [self.session startRunning];
     
@@ -147,36 +146,36 @@
 // タップイベント.
 - (void)tapped:(UITapGestureRecognizer *)sender {
     NSLog(@"タップ");
-    [self takeStillPhoto];
+    [self willTakePhoto];
 }
 
 
 
-- (void)takeStillPhoto {
+- (void)willTakePhoto {
     //ビデオ出力に接続
     AVCaptureConnection *connection = [_output connectionWithMediaType:AVMediaTypeVideo];
     
     if (connection) {
         // ビデオ出力から画像を非同期で取得
         
-//        [_output captureStillImageAsynchronouslyFromConnection:connection
-//                                             completionHandler:(void(^)(id *imageDataBuffer)){
-//                                             
-//                                                 // 取得画像のDataBufferをJpegに変換
-//                                                 NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataBuffer];
-//                                                 // JpegからUIImageを作成.
-//                                                 UIImage *image = [UIImage imageWithData:imageData];
-//                                                 // アルバムに追加.
-//                                                 UIImageWriteToSavedPhotosAlbum(image, self, nil, nil);
-//                                                
-//                                             }];
+        [_output captureStillImageAsynchronouslyFromConnection:connection
+                                             completionHandler:^(CMSampleBufferRef imageDataBuffer, NSError *error){
+                                             
+                                                 NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataBuffer];
+                                                 UIImage *image = [UIImage imageWithData:imageData];
+                                                 UIImageWriteToSavedPhotosAlbum(image, self, nil, nil);
+                                                 
+                                             }];
+        
         
     }
 
 }
 
 
-
+/**
+ *  メモリを解放する
+ */
 - (void)viewDidDisappear:(BOOL)animated {
     [super viewDidDisappear:animated];
     [self.session stopRunning];
