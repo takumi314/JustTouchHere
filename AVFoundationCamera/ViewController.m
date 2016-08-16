@@ -61,7 +61,7 @@
 
 - (void)setupCamera {
     
-//    // セッション初期化
+    // セッション初期化
     self.session = [AVCaptureSession new];
     // カメラデバイスの初期化
     _camera = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
@@ -69,12 +69,12 @@
     
     for ( AVCaptureDevice *device in [AVCaptureDevice devices] ) {
         //背面カメラを取得
-        if (device.position == AVCaptureDevicePositionBack) {
+//        if (device.position == AVCaptureDevicePositionBack) {
+//            _camera = device;
+//        }
+        if (device.position == AVCaptureDevicePositionFront) {
             _camera = device;
         }
-//        if (captureDevice.position == AVCaptureDevicePositionFront) {
-//            _camera = captureDevice;
-//        }
     }
     
     
