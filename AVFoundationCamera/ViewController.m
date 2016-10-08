@@ -51,9 +51,9 @@
 
 - (void)setupDisplay {
     // スクリーンの幅
-    CGFloat screeWidth = [UIScreen mainScreen].bounds.size.width;
+    CGFloat screeWidth = CGRectGetWidth([UIScreen mainScreen].bounds);
     // スクリーンの高さ
-    CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+    CGFloat screenHeight = CGRectGetHeight([UIScreen mainScreen].bounds);
     //プレビュー用のビューを生成
     self.preView = [[UIView alloc] initWithFrame:CGRectMake(0.0, 0.0, screeWidth, screenHeight)];
 }
