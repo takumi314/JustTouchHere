@@ -10,14 +10,13 @@
 #import <AVFoundation/AVFoundation.h>
 
 @interface ViewController ()
-@property (nonatomic, strong) AVCaptureStillImageOutput *imageOutput;
 @property (nonatomic, strong) IBOutlet UIView *preView;
+@property (nonatomic, strong) AVCaptureStillImageOutput *imageOutput;
 @property (nonatomic, strong) AVCaptureSession *session;
-
 @end
 
-NS_ENUM(NSInteger, CameraPositon) {
-    BackSide = 0,
+typedef NS_ENUM(NSInteger, CameraPosition) {
+    BackSide,
     FrontSide
 };
 
@@ -101,8 +100,9 @@ NS_ENUM(NSInteger, CameraPositon) {
     self.session = [AVCaptureSession new];
     // カメラデバイスの初期化
     _camera = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
-
-    [self shouldChooseCameraTypeWithFlag:YES];
+    
+    // 使用カメラ（前面、背面）
+    [self shouldChooseCameraTypeWithPosition:BackSide];
     
     // プライバシー設定を確認
     [self confirmPermission];
@@ -150,19 +150,21 @@ NS_ENUM(NSInteger, CameraPositon) {
     
 }
 
-- (void)shouldChooseCameraTypeWithFlag:(BOOL)device {
+- (void)shouldChooseCameraTypeWithPosition:(CameraPosition)position {
+
     for ( AVCaptureDevice *device in [AVCaptureDevice devices] ) {
-        //背面カメラを取得
-        if (device.position == AVCaptureDevicePositionBack) {
-            _camera = device;
+        switch (position) {
+            case BackSide:
+                if (device.position == AVCaptureDevicePositionBack) _camera = device;
+                break;
+            case FrontSide:
+                if (device.position == AVCaptureDevicePositionFront) _camera = device;
+                break;
+            default:
+                break;
         }
-        //        // 前面カメラを取得
-        //        if (device.position == AVCaptureDevicePositionFront) {
-        //            _camera = device;
-        //        }
     }
 }
-
 
 /**
  *  アクセス設定
