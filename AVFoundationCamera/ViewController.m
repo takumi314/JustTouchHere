@@ -48,6 +48,14 @@
 }
 
 
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+
+#pragma mark - Private Method
+
 
 - (void)setupDisplay {
     // スクリーンの幅
@@ -77,27 +85,7 @@
         }
     }
     
-    
-    AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
-    
-    if (status == AVAuthorizationStatusAuthorized) { // プライバシー設定でカメラ使用が許可されている
-        
-    } else if (status == AVAuthorizationStatusDenied) { // 　不許可になっている
-        status = AVAuthorizationStatusAuthorized;
-    } else if (status == AVAuthorizationStatusRestricted) { // 制限されている
-        status = AVAuthorizationStatusAuthorized;
-    } else if (status == AVAuthorizationStatusNotDetermined) { // アプリで初めてカメラ機能を使用する場合
-        [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
-            
-            if (granted) { // 使用が許可された場合
-//                status = AVAuthorizationStatusAuthorized;
-            } else {       // 使用が不許可になった場合
-                NSLog(@"不許可");
-            }
-            
-        }];
-        
-    }
+    [self confirmPermission];
     
     NSError *error = nil;
     _input = [[AVCaptureDeviceInput alloc] initWithDevice:_camera error:&error];
@@ -141,6 +129,30 @@
     [self.session startRunning];
     
 }
+
+
+- (void)confirmPermission {
+    AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
+    
+    if (status == AVAuthorizationStatusAuthorized) { // プライバシー設定でカメラ使用が許可されている
+        // statement
+    } else if (status == AVAuthorizationStatusDenied) { // 　不許可になっている
+        status = AVAuthorizationStatusAuthorized;
+    } else if (status == AVAuthorizationStatusRestricted) { // 制限されている
+        status = AVAuthorizationStatusAuthorized;
+    } else if (status == AVAuthorizationStatusNotDetermined) { // アプリで初めてカメラ機能を使用する場合
+        [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
+            if (granted) { // 使用が許可された場合
+                // statement               status = AVAuthorizationStatusAuthorized;
+            } else {       // 使用が不許可になった場合
+                NSLog(@"不許可");
+            }
+        }];
+        
+    }
+}
+
+
 
 
 // タップイベント.
@@ -194,9 +206,5 @@
 
 
 
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
-}
 
 @end
