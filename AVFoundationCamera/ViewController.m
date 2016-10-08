@@ -16,11 +16,19 @@
 
 @end
 
+NS_ENUM(NSInteger, CameraPositon) {
+    BackSide = 0,
+    FrontSide
+};
+
 @implementation ViewController {
     AVCaptureDeviceInput *_input;
     AVCaptureStillImageOutput *_output;
     AVCaptureDevice *_camera;
 }
+
+
+
 
 #pragma mark - Life cycle
 
@@ -45,6 +53,26 @@
     
     // setup camera
 //    [self setupDisplay];
+}
+
+
+/**
+ *  メモリを解放する
+ */
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+    [self.session stopRunning];
+    
+    for (_output in self.session.outputs) {
+        [self.session removeOutput:_output];
+    }
+    
+    for (_input in self.session.inputs) {
+        [self.session removeInput:_input];
+    }
+    
+    self.session = nil;
+    _camera = nil;
 }
 
 
@@ -74,17 +102,9 @@
     // カメラデバイスの初期化
     _camera = [AVCaptureDevice defaultDeviceWithMediaType:AVMediaTypeVideo];
 
+    [self shouldChooseCameraTypeWithFlag:YES];
     
-    for ( AVCaptureDevice *device in [AVCaptureDevice devices] ) {
-        //背面カメラを取得
-//        if (device.position == AVCaptureDevicePositionBack) {
-//            _camera = device;
-//        }
-        if (device.position == AVCaptureDevicePositionFront) {
-            _camera = device;
-        }
-    }
-    
+    // プライバシー設定を確認
     [self confirmPermission];
     
     NSError *error = nil;
@@ -130,79 +150,92 @@
     
 }
 
-
-- (void)confirmPermission {
-    AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
-    
-    if (status == AVAuthorizationStatusAuthorized) { // プライバシー設定でカメラ使用が許可されている
-        // statement
-    } else if (status == AVAuthorizationStatusDenied) { // 　不許可になっている
-        status = AVAuthorizationStatusAuthorized;
-    } else if (status == AVAuthorizationStatusRestricted) { // 制限されている
-        status = AVAuthorizationStatusAuthorized;
-    } else if (status == AVAuthorizationStatusNotDetermined) { // アプリで初めてカメラ機能を使用する場合
-        [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
-            if (granted) { // 使用が許可された場合
-                // statement               status = AVAuthorizationStatusAuthorized;
-            } else {       // 使用が不許可になった場合
-                NSLog(@"不許可");
-            }
-        }];
-        
+- (void)shouldChooseCameraTypeWithFlag:(BOOL)device {
+    for ( AVCaptureDevice *device in [AVCaptureDevice devices] ) {
+        //背面カメラを取得
+        if (device.position == AVCaptureDevicePositionBack) {
+            _camera = device;
+        }
+        //        // 前面カメラを取得
+        //        if (device.position == AVCaptureDevicePositionFront) {
+        //            _camera = device;
+        //        }
     }
 }
 
 
-
-
-// タップイベント.
-- (void)tapped:(UITapGestureRecognizer *)sender {
-    NSLog(@"タップ");
-    [self willTakePhoto];
-}
-
-
-
-- (void)willTakePhoto {
-    //ビデオ出力に接続
-    AVCaptureConnection *connection = [_output connectionWithMediaType:AVMediaTypeVideo];
+/**
+ *  アクセス設定
+ */
+- (void)confirmPermission {
+    AVAuthorizationStatus status = [AVCaptureDevice authorizationStatusForMediaType:AVMediaTypeVideo];
     
-    if (connection) {
-        // ビデオ出力から画像を非同期で取得
-        
-        [_output captureStillImageAsynchronouslyFromConnection:connection
-                                             completionHandler:^(CMSampleBufferRef imageDataBuffer, NSError *error){
-                                             
-                                                 NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataBuffer];
-                                                 UIImage *image = [UIImage imageWithData:imageData];
-                                                 UIImageWriteToSavedPhotosAlbum(image, self, nil, nil);
-                                                 
-                                             }];
-        
-        
+    switch (status) {
+        case AVAuthorizationStatusAuthorized:   // カメラの使用が許可されている場合
+            break;
+        case AVAuthorizationStatusDenied:       // カメラの使用が禁止されている場合
+            [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
+                if (granted) { // 使用が許可された場合
+                    // statement               status = AVAuthorizationStatusAuthorized;
+                } else {       // 使用が不許可になった場合
+                    NSLog(@"不許可");
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        NSURL *settingsURL = [NSURL URLWithString:UIApplicationOpenSettingsURLString];
+                        [[UIApplication sharedApplication] openURL:settingsURL];
+                    });
+                }
+            }];
+            break;
+        case AVAuthorizationStatusRestricted:   // 機能制限の場合
+            break;
+        case AVAuthorizationStatusNotDetermined:    // 初回起動時に許可設定を促すダイアログを表示
+            [AVCaptureDevice requestAccessForMediaType:AVMediaTypeVideo completionHandler:^(BOOL granted) {
+                if (granted) { // 使用が許可された場合
+                    // statement               status = AVAuthorizationStatusAuthorized;
+                } else {       // 使用が不許可になった場合
+                    NSLog(@"不許可");
+                }
+            }];
+        default:
+            break;
     }
 
 }
 
 
 /**
- *  メモリを解放する
+ *  タッチイベント
+ *
+ *  @param sender <#sender description#>
  */
-- (void)viewDidDisappear:(BOOL)animated {
-    [super viewDidDisappear:animated];
-    [self.session stopRunning];
+- (void)tapped:(UITapGestureRecognizer *)sender {
+    NSLog(@"タップ");
+    [self willTakePhoto];
+}
+
+
+/**
+ *  撮影処理
+ */
+- (void)willTakePhoto {
+    //ビデオ出力に接続
+    AVCaptureConnection *connection = [_output connectionWithMediaType:AVMediaTypeVideo];
     
-    for (_output in self.session.outputs) {
-        [self.session removeOutput:_output];
-    }
-    
-    for (_input in self.session.inputs) {
-        [self.session removeInput:_input];
+    if (connection) {
+        // ビデオ出力から画像を非同期で取得
+        [_output captureStillImageAsynchronouslyFromConnection:connection
+                                             completionHandler:^(CMSampleBufferRef imageDataBuffer, NSError *error){
+                                                 NSData *imageData
+                                                    = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:imageDataBuffer];
+                                                 UIImage *image
+                                                    = [UIImage imageWithData:imageData];
+                                                 UIImageWriteToSavedPhotosAlbum(image, self, nil, nil);
+                                             }];
     }
 
-    self.session = nil;
-    _camera = nil;
 }
+
+
 
 
 
